@@ -87,7 +87,7 @@ const PasswordGenerator = () => {
             value={[length]}
             onValueChange={(v) => setLength(v[0])}
             min={4}
-            max={128}
+            max={32}
             step={1}
           />
         </div>

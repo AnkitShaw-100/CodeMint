@@ -60,9 +60,7 @@ const JwtSecretGenerator = () => {
       <CardContent className="space-y-5">
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label className="text-muted-foreground text-sm">
-              Bit Length
-            </Label>
+            <Label className="text-muted-foreground text-sm">Bit Length</Label>
 
             <Select value={bits} onValueChange={setBits}>
               <SelectTrigger>
@@ -79,9 +77,7 @@ const JwtSecretGenerator = () => {
           </div>
 
           <div className="space-y-2">
-            <Label className="text-muted-foreground text-sm">
-              Encoding
-            </Label>
+            <Label className="text-muted-foreground text-sm">Encoding</Label>
 
             <Select value={encoding} onValueChange={setEncoding}>
               <SelectTrigger>
