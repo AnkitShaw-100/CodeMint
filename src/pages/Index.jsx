@@ -1,34 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { useTheme } from "next-themes";
-import { Tabs as TabsPrimitive } from "radix-ui";
+import {
+  Slider as SliderPrimitive,
+  Switch as SwitchPrimitive,
+  Tabs as TabsPrimitive,
+} from "radix-ui";
 import { toast } from "sonner";
-import {
-  AtSign,
-  CaseLower,
-  CaseUpper,
-  Check,
-  Copy,
-  EyeOff,
-  Hash,
-  Key,
-  KeyRound,
-  Lock,
-  Moon,
-  RefreshCw,
-  ShieldCheck,
-  Sun,
-  Zap,
-} from "lucide-react";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Slider } from "@/components/ui/slider";
-import { Switch } from "@/components/ui/switch";
+import { Check, ChevronDown, Moon, Sun } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /* ------------------------------------------------------------------ */
@@ -36,31 +14,15 @@ import { cn } from "@/lib/utils";
 /* ------------------------------------------------------------------ */
 
 const TOOLS = [
-  {
-    id: "jwt",
-    title: "JWT Secret",
-    description: "Generate cryptographic secrets for signing JSON Web Tokens",
-    icon: Key,
-  },
-  {
-    id: "password",
-    title: "Password",
-    description: "Create strong, randomized passwords with custom rules",
-    icon: KeyRound,
-  },
-];
-
-const FEATURES = [
-  { icon: ShieldCheck, label: "Cryptographically secure" },
-  { icon: Zap, label: "Instant generation" },
-  { icon: EyeOff, label: "Never stored or sent" },
+  { id: "jwt", label: "JWT Secret" },
+  { id: "password", label: "Password" },
 ];
 
 const STRENGTH_LEVELS = {
-  Weak: { level: 1, text: "text-red-600 dark:text-red-400", bar: "bg-red-500" },
-  Fair: { level: 2, text: "text-amber-700 dark:text-amber-400", bar: "bg-amber-500" },
-  Strong: { level: 3, text: "text-success-text", bar: "bg-success" },
-  "Very Strong": { level: 4, text: "text-success-text", bar: "bg-success" },
+  Weak: { level: 1, text: "text-system-red", bar: "bg-system-red" },
+  Fair: { level: 2, text: "text-system-orange", bar: "bg-system-orange" },
+  Strong: { level: 3, text: "text-system-green", bar: "bg-system-green" },
+  "Very Strong": { level: 4, text: "text-system-green", bar: "bg-system-green" },
 };
 
 // HMAC keys should be at least as long as the hash output (RFC 7518 §3.2)
@@ -71,16 +33,45 @@ const JWT_STRENGTH = {
   512: { label: "Very Strong", detail: "Suitable for HS512" },
 };
 
-const fieldTriggerClass =
-  "w-full data-[size=default]:h-11 rounded-xl border-field-border bg-field dark:bg-field dark:hover:bg-field px-3.5 text-sm font-medium shadow-none transition-colors hover:border-primary/50 focus-visible:border-primary focus-visible:ring-primary/25";
-
-const fieldContentClass = "rounded-xl border-field-border p-1 shadow-xl";
-
-const fieldItemClass = "rounded-lg py-2";
+// Subtle, Apple-like keyboard focus ring
+const focusRing =
+  "outline-none focus-visible:ring-[3px] focus-visible:ring-ring";
 
 /* ------------------------------------------------------------------ */
-/* Shared UI                                                           */
+/* Navigation                                                          */
 /* ------------------------------------------------------------------ */
+
+// App-icon style mark: a mint leaf on a squircle
+const LogoMark = ({ className }) => (
+  <svg viewBox="0 0 32 32" className={className} aria-hidden="true">
+    <path
+      className="fill-primary"
+      d="M16 0C27.2 0 32 4.8 32 16S27.2 32 16 32 0 27.2 0 16 4.8 0 16 0Z"
+    />
+    <path
+      fill="#FFFFFF"
+      d="M8 24C8 14.6 14.6 8 24 8C24 17.4 17.4 24 8 24Z"
+    />
+    <path
+      className="stroke-primary"
+      d="M8 24L17.6 14.4"
+      fill="none"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+    />
+  </svg>
+);
+
+const Logo = () => (
+  <a
+    href="/"
+    aria-label="CodeMint home"
+    className={cn("-ml-1 flex items-center gap-3 rounded-lg px-1 py-1", focusRing)}
+  >
+    <LogoMark className="size-8 sm:size-9" />
+    <span className="text-[19px] font-semibold tracking-[-0.022em] sm:text-[21px]">CodeMint</span>
+  </a>
+);
 
 const ThemeToggle = () => {
   const { resolvedTheme, setTheme } = useTheme();
@@ -91,103 +82,171 @@ const ThemeToggle = () => {
       type="button"
       onClick={() => setTheme(dark ? "light" : "dark")}
       aria-label={dark ? "Switch to light mode" : "Switch to dark mode"}
-      className="glass-card relative grid size-10 place-items-center rounded-full text-muted-foreground transition-all duration-200 hover:text-foreground motion-safe:hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/30"
+      className={cn(
+        // 36px visual, 44pt hit area via the pseudo-element
+        "relative grid size-9 place-items-center rounded-full text-muted-foreground transition-colors duration-200 hover:bg-fill hover:text-foreground",
+        "after:absolute after:-inset-1 after:content-['']",
+        focusRing
+      )}
     >
-      <Sun className="size-[18px] rotate-90 scale-0 transition-transform duration-300 dark:rotate-0 dark:scale-100" />
-      <Moon className="absolute size-[18px] rotate-0 scale-100 transition-transform duration-300 dark:-rotate-90 dark:scale-0" />
+      <Moon
+        className="col-start-1 row-start-1 size-[18px] transition-[opacity,transform] duration-300 dark:scale-75 dark:-rotate-45 dark:opacity-0"
+        strokeWidth={1.75}
+        aria-hidden="true"
+      />
+      <Sun
+        className="col-start-1 row-start-1 size-[18px] scale-75 rotate-45 opacity-0 transition-[opacity,transform] duration-300 dark:scale-100 dark:rotate-0 dark:opacity-100"
+        strokeWidth={1.75}
+        aria-hidden="true"
+      />
     </button>
   );
 };
 
-const Logo = () => (
-  <a
-    href="/"
-    className="flex items-center gap-2.5 rounded-xl focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/30"
-  >
-    <span className="bg-brand-gradient grid size-9 place-items-center rounded-xl shadow-[0_6px_16px_-4px_rgba(255,107,26,0.55)]">
-      <span className="text-[17px] font-extrabold text-[#1A1A1E]">C</span>
-    </span>
-    <span className="text-lg font-bold tracking-tight">CodeMint</span>
-  </a>
-);
+const NavBar = () => {
+  // Hairline appears only once content scrolls beneath the bar, like apple.com
+  const [scrolled, setScrolled] = useState(false);
 
-const IconChip = ({ icon, active = false, className }) => {
-  const Icon = icon;
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 4);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   return (
-    <span
+    <header
       className={cn(
-        "grid size-10 shrink-0 place-items-center rounded-xl transition-all duration-300",
-        active
-          ? "bg-brand-gradient text-[#1A1A1E] shadow-[0_6px_16px_-4px_rgba(255,107,26,0.5)]"
-          : "bg-accent text-brand-text",
-        className
+        "sticky top-0 z-50 border-b bg-background/80 backdrop-blur-xl backdrop-saturate-[1.8] transition-colors duration-300",
+        scrolled ? "border-separator" : "border-transparent"
       )}
     >
-      <Icon className="size-5" aria-hidden="true" />
-    </span>
+      <nav
+        aria-label="Main"
+        className="mx-auto flex h-[60px] max-w-[980px] items-center justify-between px-4 sm:px-6"
+      >
+        <Logo />
+        <ThemeToggle />
+      </nav>
+    </header>
   );
 };
 
-const GenerateButton = ({ onClick, children }) => (
+/* ------------------------------------------------------------------ */
+/* Controls                                                            */
+/* ------------------------------------------------------------------ */
+
+const Field = ({ label, htmlFor, children }) => (
+  <div>
+    <label
+      htmlFor={htmlFor}
+      className="mb-2 block text-[15px] font-medium text-foreground"
+    >
+      {label}
+    </label>
+    {children}
+  </div>
+);
+
+// Native <select> so iPhone shows its own picker wheel
+const SelectField = ({ id, value, onChange, options }) => (
+  <div className="relative">
+    <select
+      id={id}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className={cn(
+        "h-11 w-full cursor-pointer appearance-none rounded-[10px] bg-field pr-10 pl-4 text-[17px] text-foreground",
+        focusRing
+      )}
+    >
+      {options.map((opt) => (
+        <option key={opt.value} value={opt.value}>
+          {opt.label}
+        </option>
+      ))}
+    </select>
+    <ChevronDown
+      className="pointer-events-none absolute top-1/2 right-3.5 size-4 -translate-y-1/2 text-muted-foreground"
+      strokeWidth={2}
+      aria-hidden="true"
+    />
+  </div>
+);
+
+const IosSwitch = ({ checked, onCheckedChange }) => (
+  <SwitchPrimitive.Root
+    checked={checked}
+    onCheckedChange={onCheckedChange}
+    className={cn(
+      "inline-flex h-[31px] w-[51px] shrink-0 cursor-pointer items-center rounded-full p-[2px] transition-colors duration-200",
+      "bg-[#E9E9EA] data-[state=checked]:bg-primary dark:bg-[#39393D] dark:data-[state=checked]:bg-primary",
+      focusRing
+    )}
+  >
+    <SwitchPrimitive.Thumb className="block size-[27px] rounded-full bg-white shadow-[0_3px_8px_rgba(0,0,0,0.15),0_3px_1px_rgba(0,0,0,0.06)] transition-transform duration-200 data-[state=checked]:translate-x-5" />
+  </SwitchPrimitive.Root>
+);
+
+const IosSlider = ({ label, ...props }) => (
+  <SliderPrimitive.Root
+    className="relative flex h-11 w-full touch-none items-center select-none"
+    {...props}
+  >
+    <SliderPrimitive.Track className="relative h-1 grow overflow-hidden rounded-full bg-[#E5E5EA] dark:bg-[#3A3A3C]">
+      <SliderPrimitive.Range className="absolute h-full bg-primary" />
+    </SliderPrimitive.Track>
+    <SliderPrimitive.Thumb
+      aria-label={label}
+      className={cn(
+        "block size-7 cursor-grab rounded-full bg-white shadow-[0_0.5px_4px_rgba(0,0,0,0.12),0_6px_13px_rgba(0,0,0,0.12)] active:cursor-grabbing",
+        focusRing
+      )}
+    />
+  </SliderPrimitive.Root>
+);
+
+const PrimaryButton = ({ onClick, children }) => (
   <button
     type="button"
     onClick={onClick}
-    className="group bg-brand-gradient relative inline-flex h-12 w-full items-center justify-center gap-2 overflow-hidden rounded-2xl text-[15px] font-semibold text-[#1A1A1E] shadow-[0_10px_28px_-8px_rgba(255,107,26,0.6)] transition-all duration-200 hover:shadow-[0_16px_36px_-8px_rgba(255,107,26,0.7)] hover:brightness-[1.04] motion-safe:hover:-translate-y-0.5 motion-safe:active:translate-y-0 active:brightness-95 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/35"
-  >
-    {/* Sheen */}
-    <span
-      aria-hidden="true"
-      className="pointer-events-none absolute inset-0 bg-linear-to-b from-white/25 to-transparent"
-    />
-    <RefreshCw
-      className="relative size-[18px] transition-transform duration-500 motion-safe:group-hover:rotate-180"
-      aria-hidden="true"
-    />
-    <span className="relative">{children}</span>
-  </button>
-);
-
-const FieldLabel = ({ children, htmlFor, id }) => (
-  <Label
-    htmlFor={htmlFor}
-    id={id}
-    className="text-[13px] font-semibold tracking-wide text-muted-foreground"
+    className={cn(
+      "h-11 w-full rounded-[12px] bg-primary text-[17px] font-semibold text-primary-foreground transition-colors duration-150 hover:bg-primary-hover active:bg-primary-hover",
+      "outline-none focus-visible:ring-[3px] focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card"
+    )}
   >
     {children}
-  </Label>
+  </button>
 );
 
 const StrengthMeter = ({ label, detail }) => {
   const style = STRENGTH_LEVELS[label];
 
   return (
-    <div className="rounded-2xl bg-secondary/60 px-4 py-3.5 dark:bg-secondary/50">
-      <div className="mb-2.5 flex items-center justify-between gap-3">
-        <span className="text-[13px] font-semibold text-muted-foreground">
-          Strength
-        </span>
-        <span className={cn("text-sm font-bold", style.text)}>{label}</span>
+    <div>
+      <div className="flex items-baseline justify-between">
+        <span className="text-[15px] font-medium">Strength</span>
+        <span className={cn("text-[15px] font-semibold", style.text)}>{label}</span>
       </div>
-
-      <div className="grid grid-cols-4 gap-1.5" aria-hidden="true">
+      <div className="mt-3 grid grid-cols-4 gap-1" aria-hidden="true">
         {[1, 2, 3, 4].map((i) => (
           <span
             key={i}
             className={cn(
-              "h-1.5 rounded-full transition-colors duration-300",
-              i <= style.level ? style.bar : "bg-black/10 dark:bg-white/10"
+              "h-1 rounded-full transition-colors duration-200",
+              i <= style.level ? style.bar : "bg-[#E5E5EA] dark:bg-[#3A3A3C]"
             )}
           />
         ))}
       </div>
-
-      {detail && (
-        <p className="mt-2.5 text-xs text-muted-foreground">{detail}</p>
-      )}
+      <p className="mt-2 text-[13px] text-muted-foreground">{detail}</p>
     </div>
   );
 };
+
+/* ------------------------------------------------------------------ */
+/* Output                                                              */
+/* ------------------------------------------------------------------ */
 
 const useCopy = (value, message) => {
   // Remember which value was copied so a fresh value resets the "Copied" state
@@ -202,96 +261,72 @@ const useCopy = (value, message) => {
     toast.success(message);
     setCopiedValue(value);
     clearTimeout(timer.current);
-    timer.current = setTimeout(() => setCopiedValue(null), 1800);
+    timer.current = setTimeout(() => setCopiedValue(null), 2000);
   };
 
   return [Boolean(value) && copiedValue === value, copy];
 };
 
-const OutputPanel = ({ value, onCopy, copied, emptyTitle, emptyHint, meta, children }) => (
-  <div className="space-y-2.5">
-    <div className="flex items-center justify-between gap-3">
-      <span className="text-[13px] font-semibold tracking-wide text-muted-foreground">
-        Output
-      </span>
-
+const OutputPanel = ({ label, value, onCopy, copied, placeholder }) => (
+  <div>
+    <div className="mb-2 flex items-center justify-between">
+      <span className="text-[15px] font-medium">{label}</span>
       <button
         type="button"
         onClick={onCopy}
         disabled={!value}
-        aria-label={copied ? "Copied" : "Copy to clipboard"}
         className={cn(
-          "inline-flex h-8 items-center gap-1.5 rounded-lg px-3 text-xs font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/30 disabled:pointer-events-none disabled:opacity-40",
-          copied
-            ? "bg-success/12 text-success-text"
-            : "bg-accent text-foreground hover:bg-primary/15"
+          // Small visually, 44pt hit area via the pseudo-element
+          "relative inline-flex h-7 items-center gap-1 rounded-full bg-fill px-3 text-[13px] font-medium text-foreground transition-colors hover:bg-[rgba(118,118,128,0.2)] disabled:cursor-default disabled:opacity-40",
+          "after:absolute after:-inset-2 after:content-['']",
+          focusRing
         )}
       >
-        {copied ? (
-          <Check className="size-3.5" aria-hidden="true" />
-        ) : (
-          <Copy className="size-3.5" aria-hidden="true" />
-        )}
         {copied ? "Copied" : "Copy"}
+        {copied && (
+          <Check className="size-3.5 text-system-green" strokeWidth={2.5} aria-hidden="true" />
+        )}
       </button>
     </div>
 
-    {value ? (
-      <button
-        type="button"
-        key={value}
-        onClick={onCopy}
-        title="Click to copy"
-        className={cn(
-          "group block w-full rounded-2xl border bg-background/70 p-4 text-left transition-all duration-200 sm:p-5",
-          "motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-1 motion-safe:duration-300",
-          "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/30",
-          copied
-            ? "border-success/50"
-            : "border-field-border hover:border-primary/40"
-        )}
-      >
-        <span className="block break-all font-mono [font-variant-ligatures:none] text-[15px] leading-relaxed text-foreground sm:text-base">
-          {children ?? value}
+    <button
+      type="button"
+      onClick={onCopy}
+      disabled={!value}
+      aria-label={value ? "Copy to clipboard" : undefined}
+      className={cn(
+        "flex min-h-[88px] w-full items-center rounded-[10px] bg-field px-4 py-3.5 text-left disabled:cursor-default",
+        focusRing
+      )}
+    >
+      {value ? (
+        <span className="font-mono text-[15px] leading-[1.5] break-all text-foreground [font-variant-ligatures:none]">
+          {value}
         </span>
-        <span className="mt-3 flex items-center justify-between gap-3 text-xs text-muted-foreground">
-          <span>{meta}</span>
-          <span className="hidden transition-colors group-hover:text-foreground sm:inline">
-            Click to copy
-          </span>
-        </span>
-      </button>
-    ) : (
-      <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-field-border bg-background/50 px-6 py-9 text-center">
-        <span className="mb-3 grid size-11 place-items-center rounded-full bg-accent text-brand-text">
-          <Lock className="size-5" aria-hidden="true" />
-        </span>
-        <p className="text-sm font-semibold text-foreground">{emptyTitle}</p>
-        <p className="mt-1 max-w-xs text-xs text-muted-foreground">{emptyHint}</p>
-      </div>
-    )}
+      ) : (
+        <span className="text-[15px] text-muted-foreground">{placeholder}</span>
+      )}
+    </button>
+
+    <p className="mt-2 h-[18px] text-[13px] text-muted-foreground">
+      {value ? `${value.length} characters · Tap to copy` : ""}
+    </p>
 
     {/* Announce new output to screen readers without reading the secret aloud */}
     <span className="sr-only" aria-live="polite">
-      {value ? "New value generated." : ""}
+      {copied ? "Copied to clipboard." : value ? "New value generated." : ""}
     </span>
   </div>
 );
 
-const ToolPanel = ({ icon, title, description, children }) => (
-  <div className="glass-card rounded-[20px] p-5 sm:p-7">
-    <div className="mb-5 flex items-start gap-3.5">
-      <IconChip icon={icon} />
-      <div className="min-w-0 flex-1">
-        <h2 className="text-lg font-bold tracking-tight sm:text-xl">{title}</h2>
-        <p className="mt-0.5 text-sm text-muted-foreground">{description}</p>
-      </div>
-      <span className="hidden shrink-0 items-center gap-1.5 rounded-full bg-success/10 px-2.5 py-1 text-[11px] font-semibold text-success-text md:inline-flex">
-        <ShieldCheck className="size-3.5" aria-hidden="true" />
-        Web Crypto
-      </span>
-    </div>
-    <div className="space-y-6">{children}</div>
+const ToolCard = ({ title, description, children }) => (
+  <div className="rounded-[20px] border border-border bg-card px-6 py-8 shadow-[0_1px_3px_rgba(0,0,0,0.06)] sm:px-10 sm:py-10">
+    <h2 className="text-[24px] leading-tight font-semibold tracking-[-0.015em]">
+      {title}
+    </h2>
+    <p className="mt-1 text-[15px] text-muted-foreground">{description}</p>
+    <div className="my-8 h-px bg-separator" />
+    <div className="space-y-8">{children}</div>
   </div>
 );
 
@@ -331,74 +366,60 @@ const JwtSecretGenerator = () => {
   const strength = JWT_STRENGTH[bits];
 
   return (
-    <ToolPanel
-      icon={ShieldCheck}
+    <ToolCard
       title="JWT Secret Generator"
-      description="Random signing keys for HMAC-based JSON Web Tokens."
+      description="Generate cryptographic secrets for signing JSON Web Tokens."
     >
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className="space-y-2">
-          <FieldLabel htmlFor="jwt-bits">Bit Length</FieldLabel>
-          <Select value={bits} onValueChange={setBits}>
-            <SelectTrigger id="jwt-bits" className={fieldTriggerClass}>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent position="popper" className={fieldContentClass}>
-              <SelectItem className={fieldItemClass} value="128">128-bit</SelectItem>
-              <SelectItem className={fieldItemClass} value="256">256-bit</SelectItem>
-              <SelectItem className={fieldItemClass} value="384">384-bit</SelectItem>
-              <SelectItem className={fieldItemClass} value="512">512-bit</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 sm:gap-4">
+        <Field label="Bit Length" htmlFor="jwt-bits">
+          <SelectField
+            id="jwt-bits"
+            value={bits}
+            onChange={setBits}
+            options={[
+              { value: "128", label: "128-bit" },
+              { value: "256", label: "256-bit" },
+              { value: "384", label: "384-bit" },
+              { value: "512", label: "512-bit" },
+            ]}
+          />
+        </Field>
 
-        <div className="space-y-2">
-          <FieldLabel htmlFor="jwt-encoding">Encoding</FieldLabel>
-          <Select value={encoding} onValueChange={setEncoding}>
-            <SelectTrigger id="jwt-encoding" className={fieldTriggerClass}>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent position="popper" className={fieldContentClass}>
-              <SelectItem className={fieldItemClass} value="base64">Base64</SelectItem>
-              <SelectItem className={fieldItemClass} value="base64url">Base64URL</SelectItem>
-              <SelectItem className={fieldItemClass} value="hex">Hexadecimal</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+        <Field label="Encoding" htmlFor="jwt-encoding">
+          <SelectField
+            id="jwt-encoding"
+            value={encoding}
+            onChange={setEncoding}
+            options={[
+              { value: "base64", label: "Base64" },
+              { value: "base64url", label: "Base64URL" },
+              { value: "hex", label: "Hexadecimal" },
+            ]}
+          />
+        </Field>
       </div>
 
-      <StrengthMeter label={strength.label} detail={`${bits} bits of entropy · ${strength.detail}`} />
+      <StrengthMeter
+        label={strength.label}
+        detail={`${bits} bits of entropy. ${strength.detail}.`}
+      />
 
-      <GenerateButton onClick={generateSecret}>Generate Secret</GenerateButton>
+      <PrimaryButton onClick={generateSecret}>Generate Secret</PrimaryButton>
 
       <OutputPanel
+        label="Secret"
         value={secret}
         onCopy={copyToClipboard}
         copied={copied}
-        emptyTitle="No secret generated yet"
-        emptyHint="Pick a bit length and encoding, then press Generate Secret."
-        meta={`${secret.length} characters`}
+        placeholder="Your secret will appear here."
       />
-    </ToolPanel>
+    </ToolCard>
   );
 };
 
 /* ------------------------------------------------------------------ */
 /* Password Generator                                                  */
 /* ------------------------------------------------------------------ */
-
-// Colour-codes digits and symbols so similar-looking characters are easier to read
-const HighlightedPassword = ({ value }) =>
-  Array.from(value).map((ch, i) => {
-    let tone = "";
-    if (/[0-9]/.test(ch)) tone = "text-brand-text";
-    else if (/[^A-Za-z]/.test(ch)) tone = "text-sky-700 dark:text-sky-400";
-    return (
-      <span key={i} className={tone}>
-        {ch}
-      </span>
-    );
-  });
 
 const PasswordGenerator = () => {
   const [length, setLength] = useState(16);
@@ -452,101 +473,71 @@ const PasswordGenerator = () => {
   const strength = getStrength();
 
   const options = [
-    { id: "pw-upper", label: "Uppercase", sample: "A-Z", icon: CaseUpper, value: uppercase, set: setUppercase },
-    { id: "pw-lower", label: "Lowercase", sample: "a-z", icon: CaseLower, value: lowercase, set: setLowercase },
-    { id: "pw-numbers", label: "Numbers", sample: "0-9", icon: Hash, value: numbers, set: setNumbers },
-    { id: "pw-symbols", label: "Symbols", sample: "!@#$", icon: AtSign, value: symbols, set: setSymbols },
+    { label: "Uppercase", sample: "A-Z", value: uppercase, set: setUppercase },
+    { label: "Lowercase", sample: "a-z", value: lowercase, set: setLowercase },
+    { label: "Numbers", sample: "0-9", value: numbers, set: setNumbers },
+    { label: "Symbols", sample: "!@#$", value: symbols, set: setSymbols },
   ];
 
   return (
-    <ToolPanel
-      icon={KeyRound}
+    <ToolCard
       title="Password Generator"
-      description="Strong, randomized passwords tuned to your rules."
+      description="Create strong, randomized passwords with custom rules."
     >
-      <div className="space-y-3.5">
-        <div className="flex items-center justify-between">
-          <FieldLabel id="pw-length-label">Length</FieldLabel>
-          <span className="min-w-11 rounded-lg bg-accent px-2.5 py-1 text-center font-mono text-sm font-semibold text-foreground">
-            {length}
-          </span>
+      <div>
+        <div className="flex items-baseline justify-between">
+          <span className="text-[15px] font-medium">Length</span>
+          <span className="text-[15px] font-semibold tabular-nums">{length}</span>
         </div>
-
-        <Slider
-          aria-labelledby="pw-length-label"
+        <IosSlider
+          label="Password length"
           value={[length]}
           onValueChange={(v) => setLength(v[0])}
           min={4}
           max={32}
           step={1}
-          className="py-1.5 [&_[data-slot=slider-range]]:bg-brand-gradient [&_[data-slot=slider-thumb]]:size-5 [&_[data-slot=slider-thumb]]:border-2 [&_[data-slot=slider-thumb]]:border-primary [&_[data-slot=slider-thumb]]:ring-primary/25 [&_[data-slot=slider-track]]:h-2 [&_[data-slot=slider-track]]:bg-black/10 dark:[&_[data-slot=slider-track]]:bg-white/10"
         />
-
-        <div className="flex justify-between font-mono text-[11px] text-muted-foreground">
+        <div className="flex justify-between text-[13px] text-muted-foreground tabular-nums">
           <span>4</span>
           <span>32</span>
         </div>
       </div>
 
-      <fieldset className="space-y-2.5">
-        <legend className="mb-2.5 text-[13px] font-semibold tracking-wide text-muted-foreground">
-          Character types
-        </legend>
-        <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+      <div>
+        <span className="mb-2 block text-[15px] font-medium">Characters</span>
+        <div className="divide-y divide-black/[0.08] overflow-hidden rounded-[10px] bg-field dark:divide-white/[0.1]">
           {options.map((opt) => (
             <label
-              key={opt.id}
-              htmlFor={opt.id}
-              className={cn(
-                "flex cursor-pointer items-center gap-3 rounded-2xl border px-3.5 py-3 transition-all duration-200",
-                opt.value
-                  ? "border-primary/35 bg-accent/70 dark:bg-primary/[0.07]"
-                  : "border-field-border bg-background/50 hover:border-primary/30"
-              )}
+              key={opt.label}
+              className="flex min-h-[52px] cursor-pointer items-center justify-between gap-4 px-4 py-2"
             >
-              <span
-                className={cn(
-                  "grid size-8 shrink-0 place-items-center rounded-lg transition-colors",
-                  opt.value ? "bg-primary/15 text-brand-text" : "bg-secondary text-muted-foreground"
-                )}
-              >
-                <opt.icon className="size-4" aria-hidden="true" />
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className="block text-sm font-semibold">{opt.label}</span>
-                <span className="block font-mono text-xs text-muted-foreground">
+              <span className="text-[17px]">
+                {opt.label}
+                <span className="ml-2 font-mono text-[13px] text-muted-foreground">
                   {opt.sample}
                 </span>
               </span>
-              <Switch
-                id={opt.id}
-                checked={opt.value}
-                onCheckedChange={opt.set}
-                className="data-[state=unchecked]:bg-[#8A8A94] dark:data-[state=unchecked]:bg-[#3A3A47]"
-              />
+              <IosSwitch checked={opt.value} onCheckedChange={opt.set} />
             </label>
           ))}
         </div>
-      </fieldset>
+      </div>
 
       <StrengthMeter
         label={strength.label}
-        detail={`≈ ${Math.round(strength.entropy)} bits of entropy`}
+        detail={`About ${Math.round(strength.entropy)} bits of entropy.`}
       />
 
-      <GenerateButton onClick={generatePassword}>Generate Password</GenerateButton>
+      <PrimaryButton onClick={generatePassword}>Generate Password</PrimaryButton>
 
       <OutputPanel
+        label="Password"
         value={password}
         onCopy={copyToClipboard}
         copied={copied}
-        emptyTitle="No password generated yet"
-        emptyHint="Set a length and character types, then press Generate Password."
-        meta={`${password.length} characters`}
-      >
-        {password && <HighlightedPassword value={password} />}
-      </OutputPanel>
-    </ToolPanel>
+        placeholder="Your password will appear here."
+      />
+    </ToolCard>
   );
 };
 
@@ -558,123 +549,55 @@ const Index = () => {
   const [selectedTool, setSelectedTool] = useState("jwt");
 
   return (
-    <div className="relative min-h-screen overflow-x-hidden">
-      <div className="page-backdrop" aria-hidden="true" />
+    <div className="flex min-h-screen flex-col">
+      <NavBar />
 
-      {/* Header */}
-      <header className="sticky top-0 z-30 border-b border-border/60 bg-background/70 backdrop-blur-xl">
-        <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-4 sm:px-6">
-          <Logo />
-          <div className="flex items-center gap-3">
-            <span className="hidden items-center gap-1.5 text-xs font-medium text-muted-foreground sm:inline-flex">
-              <span className="size-1.5 rounded-full bg-success" aria-hidden="true" />
-              100% client-side
-            </span>
-            <ThemeToggle />
-          </div>
-        </div>
-      </header>
-
-      <main className="relative mx-auto max-w-5xl px-4 pb-16 sm:px-6">
+      <main className="flex-1 px-4 pb-16 sm:px-6 sm:pb-24">
         {/* Hero */}
-        <section className="pt-8 pb-7 text-center sm:pt-10 sm:pb-8">
-          <span className="glass-card mb-4 inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-semibold text-muted-foreground">
-            <ShieldCheck className="size-3.5 text-brand-text" aria-hidden="true" />
-            Powered by the Web Crypto API
-          </span>
-
-          <h1 className="mx-auto text-4xl leading-[1.08] font-extrabold tracking-[-0.035em] text-balance sm:text-5xl lg:text-6xl">
-            <span className="text-brand-gradient">Secure</span> Generation Tools
+        <section className="pt-8 pb-8 text-center sm:pt-10 sm:pb-10">
+          <h1 className="text-[40px] leading-[1.1] font-semibold tracking-[-0.02em] text-balance sm:text-[56px] sm:leading-[1.07]">
+            Secure Generation Tools
           </h1>
-
-          <p className="mx-auto mt-3 max-w-xl text-base text-pretty text-muted-foreground sm:text-[17px]">
+          <p className="mx-auto mt-4 max-w-[560px] text-[17px] leading-[1.47] text-pretty text-muted-foreground sm:text-[19px] sm:leading-[1.42]">
             Generate cryptographically secure secrets and passwords instantly.
           </p>
-
-          <ul className="mt-5 flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
-            {FEATURES.map((feature) => (
-              <li
-                key={feature.label}
-                className="inline-flex items-center gap-2 text-sm font-medium text-foreground/80"
-              >
-                <span className="grid size-6 place-items-center rounded-md bg-accent text-brand-text">
-                  <feature.icon className="size-3.5" aria-hidden="true" />
-                </span>
-                {feature.label}
-              </li>
-            ))}
-          </ul>
         </section>
 
-        {/* Tools */}
-        <TabsPrimitive.Root
-          value={selectedTool}
-          onValueChange={setSelectedTool}
-          className="mx-auto max-w-3xl"
-        >
+        <TabsPrimitive.Root value={selectedTool} onValueChange={setSelectedTool}>
+          {/* Segmented control */}
           <TabsPrimitive.List
             aria-label="Choose a generator"
-            className="mb-4 grid grid-cols-2 gap-3 sm:gap-4"
+            className="mx-auto mb-8 flex w-full max-w-[320px] rounded-[10px] bg-fill p-[3px]"
           >
-            {TOOLS.map((tool) => {
-              const active = selectedTool === tool.id;
-              return (
-                <TabsPrimitive.Trigger
-                  key={tool.id}
-                  value={tool.id}
-                  className={cn(
-                    "group relative flex flex-col items-start gap-3 rounded-[20px] p-4 text-left transition-all duration-300 sm:flex-row sm:items-center sm:gap-4 sm:px-5 sm:py-4",
-                    "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/30",
-                    "glass-card",
-                    active
-                      ? "border-primary/60 shadow-[0_12px_36px_-10px_rgba(255,107,26,0.35)]"
-                      : "opacity-90 hover:opacity-100 hover:border-primary/30 motion-safe:hover:-translate-y-0.5"
-                  )}
-                >
-                  <IconChip icon={tool.icon} active={active} />
-                  <span className="min-w-0">
-                    <span className="flex items-center gap-2 text-[15px] font-bold tracking-tight sm:text-base">
-                      {tool.title}
-                    </span>
-                    <span className="mt-1 hidden text-sm leading-snug text-muted-foreground sm:block">
-                      {tool.description}
-                    </span>
-                  </span>
-                  <span
-                    aria-hidden="true"
-                    className={cn(
-                      "absolute top-4 right-4 size-2 rounded-full transition-all duration-300",
-                      active ? "bg-primary shadow-[0_0_0_4px_rgba(255,107,26,0.18)]" : "bg-transparent"
-                    )}
-                  />
-                </TabsPrimitive.Trigger>
-              );
-            })}
+            {TOOLS.map((tool) => (
+              <TabsPrimitive.Trigger
+                key={tool.id}
+                value={tool.id}
+                className={cn(
+                  "h-[38px] flex-1 rounded-[8px] text-[15px] font-medium text-foreground transition-[background-color,box-shadow] duration-200",
+                  "data-[state=active]:bg-segment data-[state=active]:font-semibold data-[state=active]:shadow-[0_3px_8px_rgba(0,0,0,0.12),0_3px_1px_rgba(0,0,0,0.04)]",
+                  focusRing
+                )}
+              >
+                {tool.label}
+              </TabsPrimitive.Trigger>
+            ))}
           </TabsPrimitive.List>
 
-          <TabsPrimitive.Content
-            value="jwt"
-            className="focus-visible:outline-none motion-safe:animate-in motion-safe:fade-in-0 motion-safe:duration-300"
-          >
-            <JwtSecretGenerator />
-          </TabsPrimitive.Content>
-          <TabsPrimitive.Content
-            value="password"
-            className="focus-visible:outline-none motion-safe:animate-in motion-safe:fade-in-0 motion-safe:duration-300"
-          >
-            <PasswordGenerator />
-          </TabsPrimitive.Content>
+          <div className="mx-auto max-w-[720px]">
+            <TabsPrimitive.Content value="jwt" className="outline-none">
+              <JwtSecretGenerator />
+            </TabsPrimitive.Content>
+            <TabsPrimitive.Content value="password" className="outline-none">
+              <PasswordGenerator />
+            </TabsPrimitive.Content>
+          </div>
         </TabsPrimitive.Root>
       </main>
 
-      {/* Footer */}
-      <footer className="relative border-t border-border/60">
-        <p className="mx-auto flex max-w-5xl flex-wrap items-center justify-center gap-x-2.5 gap-y-1 px-4 py-6 text-center text-xs text-muted-foreground sm:text-sm">
-          <span>Built for developers</span>
-          <span aria-hidden="true">•</span>
-          <span>100% client-side</span>
-          <span aria-hidden="true">•</span>
-          <span>Nothing leaves your browser</span>
+      <footer className="border-t border-separator">
+        <p className="mx-auto max-w-[980px] px-4 py-6 text-center text-[12px] text-muted-foreground sm:px-6">
+          CodeMint · Secure. Private. On-device.
         </p>
       </footer>
     </div>
